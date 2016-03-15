@@ -27,7 +27,9 @@
 
 typedef BOOL (^UITextViewReturnBlock) (UITextView *textView);
 typedef void (^UITextViewVoidBlock) (UITextView *textView);
-typedef BOOL (^UITextViewCharacterChangeBlock) (UITextView *textView, NSRange range, NSString *replacementString);
+typedef BOOL (^UITextViewTextChangeBlock) (UITextView *textView, NSRange range, NSString *replacementString);
+typedef BOOL (^UITextViewInteractWithURLBlock) (UITextView *textView, NSURL *URL, NSRange range);
+typedef BOOL (^UITextViewInteractWithTextAttachmentBlock) (UITextView *textView, NSTextAttachment *textAttachment, NSRange range);
 
 @implementation UITextView (Blocks)
 
@@ -39,16 +41,19 @@ static const void *UITextViewShouldEndEditingKey                   = &UITextView
 static const void *UITextViewDidBeginEditingKey                    = &UITextViewDidBeginEditingKey;
 static const void *UITextViewDidEndEditingKey                      = &UITextViewDidEndEditingKey;
 
-static const void *UITextViewShouldChangeCharactersInRangeKey      = &UITextViewShouldChangeCharactersInRangeKey;
+static const void *UITextViewShouldChangeTextInRangeKey			   = &UITextViewShouldChangeTextInRangeKey;
+static const void *UITextViewDidChangeKey                          = &UITextViewDidChangeKey;
 
-static const void *UITextViewShouldClearKey                        = &UITextViewShouldClearKey;
-static const void *UITextViewShouldReturnKey                       = &UITextViewShouldReturnKey;
+static const void *UITextViewDidChangeSelectionKey                 = &UITextViewDidChangeSelectionKey;
+
+static const void *UITextViewShouldInteractWithURLKey			   = &UITextViewShouldInteractWithURLKey;
+static const void *UITextViewShouldInteractWithTextAttachmentKey   = &UITextViewShouldInteractWithTextAttachmentKey;
 
 #pragma mark UITextView Delegate methods
 
 + (BOOL)textViewShouldBeginEditing:(UITextView *)textView
 {
-    UITextViewReturnBlock block = textView.shouldBegindEditingBlock;
+    UITextViewReturnBlock block = textView.shouldBeginEditingBlock;
     if (block) {
         return block(textView);
     }
@@ -106,62 +111,90 @@ static const void *UITextViewShouldReturnKey                       = &UITextView
     }
 }
 
-+ (BOOL)textView:(UITextView *)textView shouldChangeCharactersInRange:(NSRange)range replacementString:(NSString *)string
++ (BOOL)textView:(UITextView *)textView shouldChangeTextInRange:(NSRange)range replacementString:(NSString *)string
 {
-    UITextViewCharacterChangeBlock block = textView.shouldChangeCharactersInRangeBlock;
+    UITextViewTextChangeBlock block = textView.shouldChangeTextInRangeBlock;
     if (block) {
         return block(textView,range,string);
     }
     
     id delegate = objc_getAssociatedObject(self, UITextViewDelegateKey);
     
-    if ([delegate respondsToSelector:@selector(textView:shouldChangeCharactersInRange:replacementString:)]) {
-        return [delegate textView:textView shouldChangeCharactersInRange:range replacementString:string];
+    if ([delegate respondsToSelector:@selector(textView:shouldChangeTextInRange:replacementString:)]) {
+        return [delegate textView:textView shouldChangeTextInRange:range replacementString:string];
     }
     return YES;
 }
 
-+ (BOOL)textViewShouldClear:(UITextView *)textView
++ (void)textViewDidChange:(UITextView *)textView
 {
-    UITextViewReturnBlock block = textView.shouldClearBlock;
-    if (block) {
-        return block(textView);
-    }
-    
-    id delegate = objc_getAssociatedObject(self, UITextViewDelegateKey);
-    
-    if ([delegate respondsToSelector:@selector(textViewShouldClear:)]) {
-        return [delegate textViewShouldClear:textView];
-    }
-    return YES;
+	UITextViewVoidBlock block = textView.didChangeBlock;
+	if (block) {
+		block(textView);
+	}
+	
+	id delegate = objc_getAssociatedObject(self, UITextViewDelegateKey);
+	
+	if ([delegate respondsToSelector:@selector(textViewDidChange:)]) {
+		[delegate textViewDidChange:textView];
+	}
 }
 
-+ (BOOL)textViewShouldReturn:(UITextView *)textView
++ (void)textViewDidChangeSelection:(UITextView *)textView
 {
-    UITextViewReturnBlock block = textView.shouldReturnBlock;
-    if (block) {
-        return block(textView);
-    }
-    
-    id delegate = objc_getAssociatedObject(self, UITextViewDelegateKey);
-    
-    if ([delegate respondsToSelector:@selector(textViewShouldReturn:)]) {
-        return [delegate textViewShouldReturn:textView];
-    }
-    return YES;
+	UITextViewVoidBlock block = textView.didChangeSelectionBlock;
+	if (block) {
+		block(textView);
+	}
+	
+	id delegate = objc_getAssociatedObject(self, UITextViewDelegateKey);
+	
+	if ([delegate respondsToSelector:@selector(textViewDidChangeSelection:)]) {
+		[delegate textViewDidChangeSelection:textView];
+	}
+}
+
++ (BOOL)textView:(UITextView *)textView shouldInteractWithURL:(NSURL*)URL inRange:(NSRange)range
+{
+	UITextViewInteractWithURLBlock block = textView.shouldInteractWithURLBlock;
+	if (block) {
+		return block(textView,URL,range);
+	}
+	
+	id delegate = objc_getAssociatedObject(self, UITextViewDelegateKey);
+	
+	if ([delegate respondsToSelector:@selector(textView:shouldInteractWithURL:inRange:)]) {
+		return [delegate textView:textView shouldInteractWithURL:URL inRange:range];
+	}
+	return YES;
+}
+
++ (BOOL)textView:(UITextView *)textView shouldInteractWithTextAttachment:(NSTextAttachment *)textAttachment inRange:(NSRange)range
+{
+	UITextViewInteractWithTextAttachmentBlock block = textView.shouldInteractWithTextAttachmentBlock;
+	if (block) {
+		return block(textView,textAttachment,range);
+	}
+	
+	id delegate = objc_getAssociatedObject(self, UITextViewDelegateKey);
+	
+	if ([delegate respondsToSelector:@selector(textView:shouldInteractWithTextAttachment:inRange:)]) {
+		return [delegate textView:textView shouldInteractWithTextAttachment:textAttachment inRange:range];
+	}
+	return YES;
 }
 
 #pragma mark Block setting/getting methods
 
-- (BOOL (^)(UITextView *))shouldBegindEditingBlock
+- (BOOL (^)(UITextView *))shouldBeginEditingBlock
 {
     return objc_getAssociatedObject(self, UITextViewShouldBeginEditingKey);
 }
 
-- (void)setShouldBegindEditingBlock:(BOOL (^)(UITextView *))shouldBegindEditingBlock
+- (void)setShouldBeginEditingBlock:(BOOL (^)(UITextView *))shouldBeginEditingBlock
 {
     [self setDelegateIfNoDelegateSet];
-     objc_setAssociatedObject(self, UITextViewShouldBeginEditingKey, shouldBegindEditingBlock, OBJC_ASSOCIATION_COPY);
+     objc_setAssociatedObject(self, UITextViewShouldBeginEditingKey, shouldBeginEditingBlock, OBJC_ASSOCIATION_COPY);
 }
 
 - (BOOL (^)(UITextView *))shouldEndEditingBlock
@@ -198,37 +231,61 @@ static const void *UITextViewShouldReturnKey                       = &UITextView
     objc_setAssociatedObject(self, UITextViewDidEndEditingKey, didEndEditingBlock, OBJC_ASSOCIATION_COPY);
 }
 
-- (BOOL (^)(UITextView *, NSRange, NSString *))shouldChangeCharactersInRangeBlock
+- (BOOL (^)(UITextView *, NSRange, NSString *))shouldChangeTextInRangeBlock
 {
-    return objc_getAssociatedObject(self, UITextViewShouldChangeCharactersInRangeKey);
+    return objc_getAssociatedObject(self, UITextViewShouldChangeTextInRangeKey);
 }
 
-- (void)setShouldChangeCharactersInRangeBlock:(BOOL (^)(UITextView *, NSRange, NSString *))shouldChangeCharactersInRangeBlock
+- (void)setShouldChangeTextInRangeBlock:(BOOL (^)(UITextView *, NSRange, NSString *))shouldChangeTextInRangeBlock
 {
     [self setDelegateIfNoDelegateSet];
-    objc_setAssociatedObject(self, UITextViewShouldChangeCharactersInRangeKey, shouldChangeCharactersInRangeBlock, OBJC_ASSOCIATION_COPY);
+    objc_setAssociatedObject(self, UITextViewShouldChangeTextInRangeKey, shouldChangeTextInRangeBlock, OBJC_ASSOCIATION_COPY);
 }
 
-- (BOOL (^)(UITextView *))shouldReturnBlock
+- (void (^)(UITextView *))didChangeBlock
 {
-    return objc_getAssociatedObject(self, UITextViewShouldReturnKey);
+	return objc_getAssociatedObject(self, UITextViewDidChangeKey);
+	
 }
 
-- (void)setShouldReturnBlock:(BOOL (^)(UITextView *))shouldReturnBlock
+- (void)setDidChangeBlock:(void (^)(UITextView *))didChangeBlock
 {
-    [self setDelegateIfNoDelegateSet];
-    objc_setAssociatedObject(self, UITextViewShouldReturnKey, shouldReturnBlock, OBJC_ASSOCIATION_COPY);
+	[self setDelegateIfNoDelegateSet];
+	objc_setAssociatedObject(self, UITextViewDidChangeKey, didChangeBlock, OBJC_ASSOCIATION_COPY);
 }
 
-- (BOOL (^)(UITextView *))shouldClearBlock
+- (void (^)(UITextView *))didChangeSelectionBlock
 {
-    return objc_getAssociatedObject(self, UITextViewShouldClearKey);
+	return objc_getAssociatedObject(self, UITextViewDidChangeSelectionKey);
+	
 }
 
-- (void)setShouldClearBlock:(BOOL (^)(UITextView *textView))shouldClearBlock
+- (void)setDidChangeSelectionBlock:(void (^)(UITextView *))didChangeSelectionBlock
 {
-    [self setDelegateIfNoDelegateSet];
-    objc_setAssociatedObject(self, UITextViewShouldClearKey, shouldClearBlock, OBJC_ASSOCIATION_COPY);
+	[self setDelegateIfNoDelegateSet];
+	objc_setAssociatedObject(self, UITextViewDidChangeSelectionKey, didChangeSelectionBlock, OBJC_ASSOCIATION_COPY);
+}
+
+- (BOOL (^)(UITextView *, NSURL* , NSRange))shouldInteractWithURLBlock
+{
+	return objc_getAssociatedObject(self, UITextViewShouldInteractWithURLKey);
+}
+
+- (void)setShouldInteractWithURLBlock:(BOOL (^)(UITextView *, NSURL* , NSRange))shouldInteractWithURLBlock
+{
+	[self setDelegateIfNoDelegateSet];
+	objc_setAssociatedObject(self, UITextViewShouldInteractWithURLKey, shouldInteractWithURLBlock, OBJC_ASSOCIATION_COPY);
+}
+
+- (BOOL (^)(UITextView *, NSURL* , NSRange))shouldInteractWithTextAttachmentBlock
+{
+	return objc_getAssociatedObject(self, UITextViewShouldInteractWithTextAttachmentKey);
+}
+
+- (void)setShouldInteractWithTextAttachmentBlock:(BOOL (^)(UITextView *, NSURL* , NSRange))shouldInteractWithTextAttachmentBlock
+{
+	[self setDelegateIfNoDelegateSet];
+	objc_setAssociatedObject(self, UITextViewShouldInteractWithTextAttachmentKey, shouldInteractWithTextAttachmentBlock, OBJC_ASSOCIATION_COPY);
 }
 
 #pragma mark control method
