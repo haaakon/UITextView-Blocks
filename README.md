@@ -12,69 +12,92 @@ Simply use [CocoaPods](http://cocoapods.org/):
 USAGE
 =====
 
-#### TextFieldShouldBeginEditing
+#### textViewShouldBeginEditing
 ```objective-c
 
 #import <UITextView+Blocks.h>
 UITextView *aTextField;
-[aTextField setShouldBegindEditingBlock:^BOOL(UITextView *textField) {
+[aTextView setShouldBegindEditingBlock:^BOOL(UITextView *textField) {
         // do your stuff here
         return YES;
 }];
     
 ```
 
-#### textFieldDidBeginEditing
+#### textViewDidBeginEditing
 
 ```objective-c
-[aTextField setDidBeginEditingBlock:^(UITextView *textField) {
+[aTextView setDidBeginEditingBlock:^(UITextView *textField) {
         // do your stuff here
 }];
     
 ```
 
-#### textFieldShouldEndEditing
+#### textViewShouldEndEditing
 
 ```objective-c
-[aTextField setShouldEndEditingBlock:^BOOL(UITextView *textField) {
+[aTextView setShouldEndEditingBlock:^BOOL(UITextView *textField) {
         // do your stuff here
         return YES;
   }];
     
 ```
 
-#### textFieldDidEndEditing
+#### textViewDidEndEditing
 
 ```objective-c
-[aTextField setDidEndEditingBlock:^BOOL(UITextView *textField) {
+[aTextView setDidEndEditingBlock:^BOOL(UITextView *textField) {
         // do your stuff here
   }];
     
 ```
 
-#### textField:shouldChangeCharactersInRange:replacementString:
+#### textView:shouldChangeTextInRange:replacementString:
 
 ```objective-c
-[aTextField setShouldChangeCharactersInRangeBlock:^BOOL(UITextView *textField, NSRange range, NSString *replacementString) {
+[aTextView setShouldChangeTextInRangeBlock:^BOOL(UITextView *textField, NSRange range, NSString *replacementString) {
         // do your stuff here
         return YES;
 }];
+    
 ```
-#### textFieldShouldClear
+
+#### textViewDidChange
 
 ```objective-c
-[aTextField setShouldClearBlock:^BOOL(UITextView *textField) {
+[aTextView setDidChangeBlock:^(UITextView *textField) {
         // do your stuff here
-        return NO;
 }];
+    
 ```
-#### textFieldShouldReturn
+
+#### textViewDidChangeSelectionBlock
+
 ```objective-c
-[aTextField setShouldReturnBlock:^BOOL(UITextView *textField) {
+[aTextView setDidChangeSelectionBlock:^(UITextView *textField) {
         // do your stuff here
-        return NO;
 }];
-```    
+    
+```
+
+#### textView:shouldInteractWithURL:inRange:
+
+```objective-c
+[aTextView setShouldInteractWithURLBlock:^BOOL(UITextView *textField, NSURL *URL, NSRange range) {
+        // do your stuff here
+        return YES;
+}];
+    
+```
+#### textView:shouldInteractWithTextAttachment:inRange:
+
+```objective-c
+[aTextView setShouldInteractWithTextAttachmentBlock:^BOOL(UITextView *textField, NSTextAttachment *textAttachment, NSRange range) {
+        // do your stuff here
+        return YES;
+}];
+    
+```
 
 Remember, you can also use ordinary delegate methods for all methods you don't define as blocks.
 
@@ -82,14 +105,14 @@ In this example, shouldBeginEditing is defined as a block, and didEndEditing is 
 
 ```objective-c
 
-aTextField.delegate = self;
+aTextView.delegate = self;
 
-[aTextField setShouldBegindEditingBlock:^BOOL(UITextView *textField) {
+[aTextView setShouldBeginEditingBlock:^BOOL(UITextView *textView) {
         // do your stuff here
         return YES;
     }];
 
-- (void)textFieldDidEndEditing:(UITextView *)textField
+- (void)textViewDidEndEditing:(UITextView *)textView
 {
     // do your stuff here
 }
